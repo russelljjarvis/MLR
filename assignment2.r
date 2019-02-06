@@ -12,12 +12,31 @@ if("tm" %in% rownames(installed.packages()) == FALSE) {
   install.packages("txtplot",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
 
 }
+if("compiler" %in% rownames(installed.packages()) == FALSE) {
+  install.packages("compiler",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
+
+}
+
+
+mysummary <- function(x) {
+
+  center <- median(x); spread <- mad(x)
+  result <- list(center=center,spread=spread)
+  return(result)
+}
+
 
 library(tm)
 library(SnowballC)
 library(doParallel)
 library(e1071)
 library(txtplot)
+library("compiler")
+
+cmpfun(findFreqTerms)
+cmpfun(table)
+cmpfun(naiveBayes)
+cmpfun(predict)
 
 #dev.off()
 
@@ -48,7 +67,8 @@ smsRaw = read.csv("sms_spam.csv")
 destfile = "oosloop.RData"
 if (file.exists(destfile)) {
   load("oosloop.RData")
-  browser()
+  #for ( obj in ls() ) { cat('---',obj,'---\n'); print(get(obj)) }
+  #browser()
 }
 
 ##################################################
@@ -78,8 +98,6 @@ dim(smsDtm)
 
 ##################################################
 ### tuning parameter choices
-wfreqv = c(5,10,50)
-nfr=length(wfreqv)
 
 ##################################################
 ### train/test loop
@@ -91,7 +109,6 @@ convertCounts <- function(x) {
 nsamp= 16 #number of random train/test splits
 trainfrac = .75 #percent of data to put in train
 
-resM = matrix(0.0,nsamp,nfr) #store out of sample missclassifcation rates here
 
 set.seed(99)
 n = nrow(smsDtm) #total sample size
@@ -105,8 +122,23 @@ registerDoParallel(cores=8)
 cat("number of workers is: ",getDoParWorkers(),"\n")
 
 set.seed(99)
-# Start the clock!
+
+
+ii = sample(1:n,floor(trainfrac*n))
+smsTrain = smsDtm[ii, ]
+smsTest  = smsDtm[-ii, ]
+smsTrainy = smsRaw[ii, ]$type
+smsTesty  = smsRaw[-ii, ]$type
+
+wfreqv = c(4,5,7,8,9,10,11,12)
+nfr = length(wfreqv)
+resv = rep(0,nfr)
+resM = matrix(0.0,nsamp,nfr) #store out of sample missclassifcation rates here
+
 ptm <- proc.time()
+wfreqv = c(4,5,7,8,9,10,11,12)
+
+
 resP = foreach(i=1:nsamp,.combine=rbind) %dopar% {
    if( (i%%1)==0) cat("on sample ",i,"\n")
 
@@ -118,11 +150,17 @@ resP = foreach(i=1:nsamp,.combine=rbind) %dopar% {
 
    resv=rep(0,nfr)
    for(j in 1:nfr) {
-      print('cutoff',wfreqv[j])
-      print(summary(wfreqv[j]))
-
+      #print('cutoff',wfreqv[j])
+      #print(summary(wfreqv[j]))
+      #print(mean(wfreqv[j]))
       #pull off columns with frequent words and then convert count to binary
       smsFreqWords = findFreqTerms(smsTrain, wfreqv[j])
+      print(smsFreqWords)
+      #print(length(smsFreqWords[1]), 'the length of smsFreqWords')
+      len = length(smsFreqWords)
+      print(len)
+      stopifnot(len>2)
+
       smsFreqTrain = smsTrain[ , smsFreqWords]
       smsFreqTest = smsTest[ , smsFreqWords]
       smsTrainB = apply(smsFreqTrain, MARGIN = 2, convertCounts)
@@ -134,29 +172,19 @@ resP = foreach(i=1:nsamp,.combine=rbind) %dopar% {
       # store oos missclass
       ctab = table(yhat,smsTesty)
       misclass = (sum(ctab)-sum(diag(ctab)))/sum(ctab)
-      resv[j]=misclass
-      save(resM,tottime,resP,tottimeP,file="oosloop.RData")
-      print(resM)
+      resv[j] = misclass
+      resM[j] = misclass
+      #print('gets b4 save',j)
+
+      #print('gets after save',j)
+
+
+      #print(summary(resM))
    }
-   resv
+   save(resM,file="oosloop.RData")
+   #resv
 }
-# Stop the clock
-#graph results
-x11(width = 8, height = 8)
-#plot(t[1:24], type = "l")
-boxplot(resM)
-dev.off()
-tottimeP = proc.time() - ptm
-cat("time:\n")
-print(tottimeP)
 
-##plot results
-boxplot(resP)
-
-
-## compare results
-qqplot(as.double(resM),as.double(resP))
-abline(0,1)
 
 
 
@@ -178,41 +206,47 @@ smsAge0 = smsTrainB[!iiy1,"age"]
 smsAdult0 = smsTrainB[!iiy1,"adult"]
 
 sink("age-adult-tables.txt")
+png('tables1.png',type="cairo")
+
 table(smsAge1,smsAdult1)
+png('tables2.png',type="cairo")
+
 table(smsAge0,smsAdult0)
-sink()
+#dev.off()
+
+#sink()
 
 
-# if (1==2){
-#   # comment out
-#   # Start the clock!
-#   ptm <- proc.time()
-#   for(i in 1:nsamp) {
-#      if( (i%%1)==0) cat("on sample ",i,"\n")
-#
-#      ii = sample(1:n,floor(trainfrac*n))
-#      smsTrain = smsDtm[ii, ]
-#      smsTest  = smsDtm[-ii, ]
-#      smsTrainy = smsRaw[ii, ]$type
-#      smsTesty  = smsRaw[-ii, ]$type
-#
-#      for(j in 1:nfr) {
-#         #pull off columns with frequent words and then convert count to binary
-#         smsFreqWords = findFreqTerms(smsTrain, wfreqv[j])
-#         smsFreqTrain = smsTrain[ , smsFreqWords]
-#         smsFreqTest = smsTest[ , smsFreqWords]
-#         smsTrainB = apply(smsFreqTrain, MARGIN = 2, convertCounts)
-#         smsTestB  = apply(smsFreqTest, MARGIN = 2, convertCounts)
-#         # fit NM on train
-#         smsNB = naiveBayes(smsTrainB, smsTrainy)
-#         # predict on test
-#         yhat = predict(smsNB,smsTestB)
-#         # store oos missclass
-#         ctab = table(yhat,smsTesty)
-#         misclass = (sum(ctab)-sum(diag(ctab)))/sum(ctab)
-#         resM[i,j]=misclass
-#      }
-#   }
+if (1==2){
+  # comment out
+  # Start the clock!
+  ptm <- proc.time()
+  for(i in 1:nsamp) {
+     if( (i%%1)==0) cat("on sample ",i,"\n")
+
+     ii = sample(1:n,floor(trainfrac*n))
+     smsTrain = smsDtm[ii, ]
+     smsTest  = smsDtm[-ii, ]
+     smsTrainy = smsRaw[ii, ]$type
+     smsTesty  = smsRaw[-ii, ]$type
+
+     for(j in 1:nfr) {
+        #pull off columns with frequent words and then convert count to binary
+        smsFreqWords = findFreqTerms(smsTrain, wfreqv[j])
+        smsFreqTrain = smsTrain[ , smsFreqWords]
+        smsFreqTest = smsTest[ , smsFreqWords]
+        smsTrainB = apply(smsFreqTrain, MARGIN = 2, convertCounts)
+        smsTestB  = apply(smsFreqTest, MARGIN = 2, convertCounts)
+        # fit NM on train
+        smsNB = naiveBayes(smsTrainB, smsTrainy)
+        # predict on test
+        yhat = predict(smsNB,smsTestB)
+        # store oos missclass
+        ctab = table(yhat,smsTesty)
+        misclass = (sum(ctab)-sum(diag(ctab)))/sum(ctab)
+        resM[i,j]=misclass
+     }
+  }
   # Stop the clock
   tottime = proc.time() - ptm
   cat("time:\n")
