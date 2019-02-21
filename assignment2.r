@@ -3,9 +3,6 @@ if("tm" %in% rownames(installed.packages()) == FALSE) {
 
   update.packages(checkBuilt=TRUE, ask=FALSE,repos = "http://cran.us.r-project.org", dependencies = TRUE)
   install.packages("tm",repos = "http://cran.us.r-project.org", dependencies = TRUE)
-  # install.packages("devtools")
-  #devtools::install_github("igraph/rigraph")
-  #devtools::install_github("KlausVigo/kknn")
   install.packages("SnowballC",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
   install.packages("e1071",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
   install.packages("doParallel",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
@@ -17,14 +14,12 @@ if("compiler" %in% rownames(installed.packages()) == FALSE) {
 
 }
 
-
 mysummary <- function(x) {
-
+  # an example of a function that can be mapped (applied in R).
   center <- median(x); spread <- mad(x)
   result <- list(center=center,spread=spread)
   return(result)
 }
-
 
 library(tm)
 library(SnowballC)
@@ -38,27 +33,10 @@ cmpfun(table)
 cmpfun(naiveBayes)
 cmpfun(predict)
 
-#dev.off()
-
-# install.packages("igraph",repos = "http://cran.us.r-project.org", dependencies = TRUE)
-# install.packages("kknn",repos = "http://cran.us.r-project.org", dependencies = TRUE)
-# install.packages("igraph",repos = "http://cran.us.r-project.org", dependencies = TRUE)
-# install.packages("kknn",repos = "http://cran.us.r-project.org", dependencies = TRUE)
-
-# Clear plots
-if(!is.null(dev.list())) dev.off()
-# Clear console
-cat("\014")
-# Clean workspace
-rm(list=ls())
-# Set working directory
-# setwd("~/git/R_code_assignments")
 
 destfile = "sms_spam.csv"
 if (!file.exists(destfile)) {
   smsRaw = read.csv("http://www.rob-mcculloch.org/data/sms_spam.csv", stringsAsFactors = FALSE)
-
-  #usedcars = read.csv("http://www.rob-mcculloch.org/data/usedcars.csv")
   write.csv(smsRaw, file = destfile)
 
 }
@@ -67,8 +45,8 @@ smsRaw = read.csv("sms_spam.csv")
 destfile = "oosloop.RData"
 if (file.exists(destfile)) {
   load("oosloop.RData")
+  # un comment to dir() on data types:
   #for ( obj in ls() ) { cat('---',obj,'---\n'); print(get(obj)) }
-  #browser()
 }
 
 ##################################################
@@ -106,7 +84,7 @@ convertCounts <- function(x) {
   x <- ifelse(x > 0, "Yes", "No")
 }
 
-nsamp= 16 #number of random train/test splits
+nsamp= 8 #number of random train/test splits
 trainfrac = .75 #percent of data to put in train
 
 
@@ -132,61 +110,109 @@ smsTesty  = smsRaw[-ii, ]$type
 
 wfreqv = c(4,5,7,8,9,10,11,12)
 nfr = length(wfreqv)
-resv = rep(0,nfr)
+residues = rep(0,nfr)
 resM = matrix(0.0,nsamp,nfr) #store out of sample missclassifcation rates here
 
 ptm <- proc.time()
-wfreqv = c(4,5,7,8,9,10,11,12)
+#wfreqv = c(4,5,7,8,9,10,11,12)
 
+smsNB = naiveBayes(smsTrain, smsTrainy, laplace=1)
+yhat = predict(smsNB,smsTest)
+ctab = table(yhat,smsTesty)
+ctab
+misclass = (sum(ctab)-sum(diag(ctab)))/sum(ctab)
+perspam = ctab[2,2]/sum(ctab[,2])
+cat("misclass,perspam: ", misclass,perspam,"\n")
+#resP = foreach(i=1:nsamp,.combine=rbind) %dopar% {
+i = 1
+#if( (i%%1)==0) cat("on sample ",i,"\n")
 
-resP = foreach(i=1:nsamp,.combine=rbind) %dopar% {
-   if( (i%%1)==0) cat("on sample ",i,"\n")
+ii = sample(1:n,floor(trainfrac*n)) # randomly choose a subsample.
 
-   ii = sample(1:n,floor(trainfrac*n))
-   smsTrain = smsDtm[ii, ]
-   smsTest  = smsDtm[-ii, ]
-   smsTrainy = smsRaw[ii, ]$type
-   smsTesty  = smsRaw[-ii, ]$type
+# use this random sub sample to make train and test splits.
+smsTrain = smsDtm[ii, ]
+smsTest  = smsDtm[-ii, ]
+smsTrainy = smsRaw[ii, ]$type
+smsTesty  = smsRaw[-ii, ]$type
 
-   resv=rep(0,nfr)
-   for(j in 1:nfr) {
-      #print('cutoff',wfreqv[j])
-      #print(summary(wfreqv[j]))
-      #print(mean(wfreqv[j]))
-      #pull off columns with frequent words and then convert count to binary
-      smsFreqWords = findFreqTerms(smsTrain, wfreqv[j])
-      print(smsFreqWords)
-      #print(length(smsFreqWords[1]), 'the length of smsFreqWords')
-      len = length(smsFreqWords)
-      print(len)
-      stopifnot(len>2)
+resv=rep(0,nfr)
+for(j in 1:nfr) {
+  #pull off columns with frequent words and then convert count to binary
+  smsFreqWords = findFreqTerms(smsTrain, 8)
+  print(smsFreqWords)
+  len = length(smsFreqWords)
+  #print(len)
+  #stopifnot(len>2)
 
-      smsFreqTrain = smsTrain[ , smsFreqWords]
-      smsFreqTest = smsTest[ , smsFreqWords]
-      smsTrainB = apply(smsFreqTrain, MARGIN = 2, convertCounts)
-      smsTestB  = apply(smsFreqTest, MARGIN = 2, convertCounts)
-      # fit NM on train
-      smsNB = naiveBayes(smsTrainB, smsTrainy)
-      # predict on test
-      yhat = predict(smsNB,smsTestB)
-      # store oos missclass
-      ctab = table(yhat,smsTesty)
-      misclass = (sum(ctab)-sum(diag(ctab)))/sum(ctab)
-      resv[j] = misclass
-      resM[j] = misclass
-      #print('gets b4 save',j)
+  smsFreqTrain = smsTrain[ , smsFreqWords]
+  smsFreqTest = smsTest[ , smsFreqWords]
+  smsTrainB = apply(smsFreqTrain, MARGIN = 2, convertCounts)
+  smsTestB  = apply(smsFreqTest, MARGIN = 2, convertCounts)
+  # fit NM on train
+  smsNB = naiveBayes(smsTrainB, smsTrainy)
+  # predict on test
+  yhat = predict(smsNB,smsTestB)
+  # store oos missclass
+  ctab = table(yhat,smsTesty)
+  misclass = (sum(ctab)-sum(diag(ctab)))/sum(ctab)
+  residues[j] = misclass
 
-      #print('gets after save',j)
-
-
-      #print(summary(resM))
-   }
-   save(resM,file="oosloop.RData")
-   #resv
 }
+sink("age-adult-tables.txt")
 
+table(smsAge1,smsAdult1)
+fname = paste('tables',i,'1.png')
+png(fname,type="cairo")
+table(smsAge0,smsAdult0)
+fname = paste('tables',i,'2.png')
+png(fname,type="cairo")
+save(residues,file="oosloop.RData")
+#}
 
+#browser()
+i = 1
+#if( (i%%1)==0) cat("on sample ",i,"\n")
 
+ii = sample(1:n,floor(trainfrac*n)) # randomly choose a subsample.
+
+# use this random sub sample to make train and test splits.
+smsTrain = smsDtm[ii, ]
+smsTest  = smsDtm[-ii, ]
+smsTrainy = smsRaw[ii, ]$type
+smsTesty  = smsRaw[-ii, ]$type
+
+resv=rep(0,nfr)
+for(j in 1:nfr) {
+  #pull off columns with frequent words and then convert count to binary
+  smsFreqWords = findFreqTerms(smsTrain, 8)
+  print(smsFreqWords)
+  len = length(smsFreqWords)
+  #print(len)
+  #stopifnot(len>2)
+
+  smsFreqTrain = smsTrain[ , smsFreqWords]
+  smsFreqTest = smsTest[ , smsFreqWords]
+  smsTrainB = apply(smsFreqTrain, MARGIN = 2, convertCounts)
+  smsTestB  = apply(smsFreqTest, MARGIN = 2, convertCounts)
+  # fit NM on train
+  smsNB = naiveBayes(smsTrainB, smsTrainy,laplace=2)
+  # predict on test
+  yhat = predict(smsNB,smsTestB)
+  # store oos missclass
+  ctab = table(yhat,smsTesty)
+  misclass = (sum(ctab)-sum(diag(ctab)))/sum(ctab)
+  residues[j] = misclass
+
+}
+sink("age-adult-tables.txt")
+
+table(smsAge1,smsAdult1)
+fname = paste('tables_laplace2',i,'1.png')
+png(fname,type="cairo")
+table(smsAge0,smsAdult0)
+fname = paste('tables_laplace2',i,'2.png')
+png(fname,type="cairo")
+save(residues,file="oosloop.RData")
 
 ##################################################
 ### pull off age, adult tables
@@ -204,17 +230,6 @@ smsAge1 = smsTrainB[iiy1,"age"]
 smsAdult1 = smsTrainB[iiy1,"adult"]
 smsAge0 = smsTrainB[!iiy1,"age"]
 smsAdult0 = smsTrainB[!iiy1,"adult"]
-
-sink("age-adult-tables.txt")
-png('tables1.png',type="cairo")
-
-table(smsAge1,smsAdult1)
-png('tables2.png',type="cairo")
-
-table(smsAge0,smsAdult0)
-#dev.off()
-
-#sink()
 
 
 if (1==2){

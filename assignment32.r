@@ -11,6 +11,8 @@ if("kknn" %in% rownames(installed.packages()) == FALSE) {
 # install.packages("kknn",repos = "http://cran.us.r-project.org", dependencies = TRUE)
 # install.packages("igraph",repos = "http://cran.us.r-project.org", dependencies = TRUE)
 # install.packages("kknn",repos = "http://cran.us.r-project.org", dependencies = TRUE)
+options(error=recover,keep.source = TRUE, show.error.locations = TRUE,
+keep.source.pkgs = TRUE)
 
 # Clear plots
 if(!is.null(dev.list())) dev.off()
@@ -28,7 +30,6 @@ if (!file.exists(destfile)) {
 }
 usedcars = read.csv("usedcars.csv")
 library("compiler")
-
 library(doParallel)
 
 sessionInfo() #see what packages were loaded
@@ -47,19 +48,18 @@ cmpfun(points)
 
 price = usedcars['price']
 mileage = usedcars['mileage']
-#print(price[1,:])
-y = price[,1]
-x = mileage[,1]
-#print(price[1,1])
-#plot(price[,1],mileage[,1])
 
-kvec = c(4,40,150)
-nsim = 30
+price = price[,1]
+mileage = mileage[,1]
+
+#price <- rev(price)
+png('simple_plot_3.png',type="cairo")
+plot(mileage,price,col='blue')
+dev.off()
+nsim=30
 fit1 = rep(0,nsim)
-fit2 = rep(0,nsim)
-fit3 = rep(0,nsim)
-train = data.frame(x,y)
-test = data.frame(x=sort(x))
+train = data.frame(mileage,price)
+test = data.frame(price=sort(price))
 #With the par( ) function, you can include the option mfrow=c(nrows, ncols)
 #to create a matrix of nrows x ncols plots that are filled in by row.
 #mfcol=c(nrows, ncols) fills in the matrix by columns.
@@ -67,120 +67,92 @@ ntrain=200
 
 fitind = 400
 kvec = c(1,2,3,4,5,6,7,8,9,10,20,40,75,150,200,300,400,500,600)
-nsim=30
-fit1=rep(0,nsim)
-fit2=rep(0,nsim)
-fit3=rep(0,nsim)
-medv = x
-lstat = y
-train = data.frame(lstat,medv)
-test = data.frame(lstat=sort(lstat))
-#par(mfrow=c(2,3))
+#fit1=rep(0,nsim)
 ntrain = 200
 fitind = 400 #why 400?
 
-kfit1 = kknn(medv~lstat,train,test,k=600,kernel = "rectangular")
+kfit1 = kknn(mileage~price,train,test,k=700,kernel = "rectangular")
 fit1 = kfit1$fitted[fitind]
-print(paste('iteration number: ',k))
 png('compare_fits.png',type="cairo")
 par()
-plot(lstat,medv,col="lightgray")
-points(lstat,medv,col="blue",pch=16)
-lines(test$lstat,kfit1$fitted,col="red",lwd=2)
+plot(mileage,price,col="lightgray")
+points(mileage,price,col="blue",pch=16)
+lines(test$price,kfit1$fitted,col="red",lwd=2)
 print(paste('the price at 10000 is: ',kfit1$fitted[10000]))
-print('28237.75')
+#print('28237.75')
 #browser()
 points(test[fitind,1],kfit1$fitted[fitind],col="green",pch=17,cex=2)
-relation <- lm(medv~lstat)
+relation <- lm(mileage~price)
 print(relation$fitted.values[10000])
-print('76402.16')
+#print('76402.16')
 
-#plot(lstat,medv,col="lightgray")
+#plot(mileage,price,col="lightgray")
 abline(relation,col="green",pch=17,cex=2)
 dev.off()
 set.seed(99)
+browser()
+compare <- TRUE
+if (compare==TRUE){
+  kfito = kknn(price~mileage,train,test,k=80,kernel = "optimal")
+  fito = kfito$fitted[fitind]
 
+  png('compare_fits.png',type="cairo")
+  par()
+  kfitr = kknn(price~mileage,train,test,k=80,kernel = "rectangular")
+  fitr = kfitr$fitted[fitind]
+  lines(test$price,kfitr$fitted,col="red",lwd=2)
+  lines(test$price,kfito$fitted,col="red",lwd=2)
+  #abline(relation,col="green",pch=17,cex=2)
+  dev.off()
+}
+
+  #plot(mileage,price,col="lightgray")
+  #points(mileage,price,col="blue",pch=16)
+  #print(paste('the price at 10000 is: ',kfit1$fitted[10000]))
+  #print('28237.75')
+  #browser()
+  #points(test[fitind,1],kfit1$fitted[fitind],col="green",pch=17,cex=2)
+  #relation <- lm(price~mileage)
+  #print(relation$fitted.values[10000])
+  #print('76402.16')
+
+  #plot(mileage,price,col="lightgray")
 ##
 # At k = 300 everything looks good.
 ##
 #for (k in kvec){
-#resP = foreach(k in kvev) %dopar% {
-
 
 
 matrix<-foreach(i=1:length(kvec),.combine=cbind) %do% {
 #matrix<-foreach(i=1:.combine=cbind) %do% {
-   k = kvec[i]
-   print(paste('iteration number: ', kvec[i]))
-
-   fname = paste('k_number_kmeans',k,'.png')
+   k <- kvec[i]
+   thing_to_print <-paste('iteration number: ', kvec[i])
+   print(thing_to_print)
+   fname = paste('k_number_kmeans',kvec[i],'.png')
    png(fname,type="cairo")
-   #par(mfrow=c(1,3))
    par()
-   #ii = sample(1:nrow(train),ntrain)
-   kfit1 = kknn(medv~lstat,train,test,k=k,kernel = "rectangular")
-   #kfit2 = kknn(medv~lstat,train[ii,],test,k=kvec[2],kernel = "rectangular")
-   #kfit3 = kknn(medv~lstat,train[ii,],test,k=kvec[3],kernel = "rectangular")
+   gknn = kfit1 = kknn(price~mileage,train,test,k=k,kernel = "rectangular")
    fit1[i] = kfit1$fitted[fitind]
-   #fit2[i] = kfit2$fitted[fitind]
-   #fit3[i] = kfit3$fitted[fitind]
 
-   #browser()
-   plot(lstat,medv,col="lightgray")
-   points(lstat,medv,col="blue",pch=16)
-   lines(test$lstat,kfit1$fitted,col="red",lwd=2)
+   plot(mileage,price,col="lightgray")
+   points(mileage,price,col="blue",pch=16)
+   lines(test$price,kfit1$fitted,col="red",lwd=2)
    points(test[fitind,1],kfit1$fitted[fitind],col="green",pch=17,cex=2)
-   relation <- lm(medv~lstat)
-   plot(lstat,medv,col="lightgray")
+   relation <- lm(price~mileage)
+   plot(mileage,price,col="lightgray")
    abline(relation,col="green",pch=17,cex=2)
    dev.off()
 
-   #fname = paste('frame_linear_regression.png')
-   #png(fname,type="cairo")
-   #par()
-
-
-  # dev.off()
-
-   #browser()
-   #plot(lstat,medv,col="lightgray")
-   #points(lstat,medv,col="blue",pch=16)
-   #lines(test$lstat,kfit1$fitted,col="red",lwd=2)
-   #points(test[fitind,1],kfit1$fitted[fitind],col="green",pch=17,cex=2)
-
-   #plot(lstat,medv,col="lightgray")
-   #lines(test$lstat,kfit2$fitted,col="red",lwd=2)
-   #points(test[fitind,1],kfit2$fitted[fitind],col="green",pch=17,cex=2)
-
-   #plot(lstat,medv,col="lightgray")
-   #lines(test$lstat,kfit3$fitted,col="red",lwd=2)
-   #points(test[fitind,1],kfit3$fitted[fitind],col="green",pch=17,cex=2)
-   #dev.off()
-
-
-   #fname = paste('frame',i,'.png')
-   #png(fname,type="cairo")
    fname = paste('the_box_plots',k,'.png')
    png(fname,type="cairo")
-   #par(mfrow=c(1,3))
-   boxplot(fit1)#,ylim=ylm)
+   boxplot(fit1[i])
    abline(h = gknn$fitted,col="red")
    dev.off()
-
-   # boxplot(fit2[1:i])#,ylim=ylm)
-   # abline(h = gknn$fitted,col="red")
-   # boxplot(fit3[1:i])#,ylim=ylm)
-   # abline(h = gknn$fitted,col="red")
-   # dev.off()
-
  }
 
-#}
-
-
-
-
-#cat('yes, the relationship makes sense cars that are driven less on average cost more.')
+# the data makes sense when only cost can be zero. Mileage can't be zero.
+cat('controlling for initial price, cost ')
+#cat('depcrecation, yes, the relationship makes sense cars that are driven less on average cost more.')
 #cat('People will pay more for reduced mileage, as this relates to less mechanical failure.')
 
 #
