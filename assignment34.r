@@ -12,6 +12,7 @@ doknn = function(x,y,xp,k) {
    near  = kknn(y~.,train,test,k=kdo,kernel='rectangular')
    return(near$fitted)
 }
+
 #--------------------------------------------------
 docv = function(x,y,set,predfun,loss,nfold=10,doran=TRUE,verbose=TRUE,...)
 {
@@ -107,9 +108,17 @@ cmpfun(points)
 
 price = usedcars['price']
 mileage = usedcars['mileage']
-
+years = usedcars['year']
+years = years[,1]
+year_indexs = which(years %in% 2008)
 price = price[,1]
 mileage = mileage[,1]
+reduced_prices = price[year_indexs]
+reduced_mileage = mileage[year_indexs]
+plot(reduced_mileage,reduced_prices,col='blue')
+
+
+#year_indexs = match(2018,years)
 
 #temp <- mileage
 #mileage <- price
@@ -126,36 +135,58 @@ plot(mileage,price,col='blue')
 #price <- rev(price)
 #png('simple_plot_3.png',type="cairo")
 #dev.off()
-nsim=30
-fit1 = rep(0,nsim)
+#nsim=30
+#fit1 = rep(0,nsim)
 #With the par( ) function, you can include the option mfrow=c(nrows, ncols)
 #to create a matrix of nrows x ncols plots that are filled in by row.
 #mfcol=c(nrows, ncols) fills in the matrix by columns.
 ntrain=200
 
-fitind = 400
-kvec = c(1,2,3,4,5,6,7,8,9,10,20,40,75,150,200,300,400,500,600)
-#fit1=rep(0,nsim)
 ntrain = 200
 fitind = 10000 #why 400?
 
 
-#x = price
-#y = mileage
-#price <- y
-#mileage <- x
-train = data.frame(price,mileage)
-test = data.frame(mileage=sort(mileage))
+reduced_prices = price[year_indexs]
+reduced_mileage = mileage[year_indexs]
 
-kfit1 = kknn(price~mileage,train,test,k=450,kernel = "rectangular")
-#kfit1 = kknn(mileage~price,train,test,k=450,kernel = "rectangular")
+simulate_data <- function(x,y){
 
-par()
-plot(mileage,price,col="lightgray")
-#points(mileage,price,col="lightgray",pch=16)
-lines(test$mileage,kfit1$fitted,col="red",lwd=2)
-print(paste('the price at 10000 from kmeans is: ',kfit1$fitted[10000]))
-points(test[fitind,1],kfit1$fitted[fitind],col="blue",pch=17,cex=2)
+  xy.frame <- data.frame(x,y)
+  print(xy.frame)
+
+  nl.fit <- nls(formula=(y ~ a * x^b), data=xy.frame, start = c(a=max(y), b=-0.7))
+
+  a.est <- coef(nl.fit)[1]
+  b.est <- coef(nl.fit)[2]
+
+  plot(x=xy.frame$x,y=xy.frame$y)
+
+  # curve looks too high
+  curve(a.est * x^b.est , add=T)
+  return #list(a,b)
+}
+contents <- simulate_data(reduced_mileage,reduced_prices)
+
+
+k_stuff <- function(price,mileage){
+    #print(is.na(point),point)
+    train = data.frame(price,mileage)
+    test = data.frame(mileage=sort(mileage))
+
+    kfit1 = kknn(price~mileage,train,test,k=450,kernel = "rectangular")
+
+    plot(mileage,price,col="lightgray")
+    lines(test$mileage,kfit1$fitted,col="red",lwd=2)
+    #  point<-75000
+    point = which(mileage %in% 75000)
+
+    points(test[point,1],kfit1$fitted[point],col="blue",pch=17,cex=2)
+    print(paste('the price at 75000 from kmeans is: ',kfit1$fitted[point]))
+    return(kfit1)
+}
+kfit1 <- k_stuff(reduced_prices,reduced_mileage)
+#test = output[1]
+#fitted = output[2]
 relation <- lm(price~mileage)
 #abline(relation,col="green",pch=17,cex=2)
 
@@ -169,8 +200,7 @@ plot_against = rep(1:length(matrix))
 plot(plot_against,matrix)
 browser()
 
-
-using_all_neighbors <- do_cv_knn(data.frame(mileage),price,length(mileage),nfold=5,doran=TRUE,verbose=TRUE) 
+using_all_neighbors <- do_cv_knn(data.frame(mileage),price,length(mileage),nfold=5,doran=TRUE,verbose=TRUE)
 
 #browser()
 #plot(mileage,price,col="lightgray")
@@ -189,6 +219,7 @@ kfitr = kknn(price~mileage,train,test,k=15,kernel = "rectangular")
 plot(mileage,price,col="lightgray")
 lines(test$mileage,kfitr$fitted,col="red",lwd=2,xlab="rectangular")
 lines(test$mileage,kfito$fitted,col="green",lwd=2,xlab='optimal')
+
 #+   main = "Eruptions of Old Faithful",
 #+   xlab = "Eruption time (min)",
 #+   ylab = "Waiting time to next eruption (min)")
