@@ -54,7 +54,7 @@ Using K 450 makes a really smooth fit, but perhaps we have overfitted, with an o
 This plot is an example of using kmeans regression. k means using 45 neighbours.
 ![This plot is an example of using kmeans regression. k means using 45 neighbours.](/production/with_correct_fit_index.png)
 
-This plot is an example of using  kmeans regression using k =45.
+This plot is an example of using  kmeans optimal/ versus rectangular methods, where green is optimal and red is rectangular, the optimal method looks smoother, both methods where computed using k =45.
 ![This plot is an example of using  kmeans regression using k =45.](/production/optimal_versus_rectangular.png)
 ```R
 Browse[1]> print(paste('the price at 10000 from kmeans is: ',kfit1$fitted[10000]))
