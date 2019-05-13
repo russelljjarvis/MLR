@@ -1,0 +1,26 @@
+BEGIN:VCALENDAR
+PRODID:-//Virtually There Itinerary//iCal4j 1.0//EN
+VERSION:2.0
+METHOD:PUBLISH
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTAMP:20190513T215248Z
+DTSTART:20190518T201000Z
+DTEND:20190518T214200Z
+SUMMARY:MR RUSSELL JARROD JARVIS\, Flight to LOS ANGELES\, CA - PAACHE
+TZID:Europe/London
+UID:20190513T215248Z-iCalUidGenForSVT@vtlhlp203.sabre.com
+LOCATION:PHOENIX\, AZ
+DESCRIPTION:Access your trip details on www.tripcase.com\n\nFlight: VIRGI
+ N AUSTRALIA\, VA 6754\n\nOperated by: COMPASS DBA DELTA CONNECTION\n\nFr
+ om: PHOENIX\, AZ (PHX)\n\nDeparts: Saturday\, 18 May 2019 1:10pm\n\nDepa
+ rting Terminal: TERMINAL 3\n\nTo: LOS ANGELES\, CA (LAX)\n\nArrives: Sat
+ urday\, 18 May 2019 2:42pm\n\nArrival Terminal: TERMINAL 2\n\nClass: Eco
+ nomy\n\nAirline Reservation Code: JPUCBM\n\nSeat(s): Check-In Required\n
+ \nStatus:Confirmed\n\nMeals:\n\nAircraft: EMBRAER EMB 175 JET\n\nDistanc
+ e (in Miles): 370\n\nStop(s): 0\n\nSmoking: No\n\nDuration: 1hr(s) 32min
+ (s)\n\nNotes:\n\nLoyalty Number: 1183365473\n\nReservation Code: PAACHE\
+ n\nTicket Number: 7952154271844
+ORGANIZER:MAILTO:TripCase%20%3Cno-reply@tripcase.com%3E
+END:VEVENT
+END:VCALENDAR
