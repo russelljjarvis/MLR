@@ -112,7 +112,7 @@ let
     end
 end
 
-using StatPlots
+#using StatPlots
 @df errdf[5:60,:] plot(:Epoch, [:ValError, :TrnError], xlabel="Epoch", ylabel="Error",
                        label=["Validation" "Training"], lw=3)
 gui()
