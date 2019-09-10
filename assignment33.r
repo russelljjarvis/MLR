@@ -202,7 +202,7 @@ if (compare==TRUE){
 ##
 #for (k in kvec){
 
-browser()
+#browser()
 
 matrix<-foreach(i=1:length(kvec),.combine=cbind) %do% {
 #matrix<-foreach(i=1:.combine=cbind) %do% {
@@ -222,13 +222,13 @@ matrix<-foreach(i=1:length(kvec),.combine=cbind) %do% {
    relation <- lm(price~mileage)
    plot(mileage,price,col="lightgray")
    abline(relation,col="green",pch=17,cex=2)
-   dev.off()
+   #dev.off()
 
    fname = paste('the_box_plots',k,'.png')
    png(fname,type="cairo")
    boxplot(fit1[i])
    abline(h = kfit1$fitted,col="red")
-   dev.off()
+   #dev.off()
  }
 
 # the data makes sense when only cost can be zero. Mileage can't be zero.

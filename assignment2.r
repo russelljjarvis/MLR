@@ -1,5 +1,5 @@
 #setContentType("image/png")
-if("tm" %in% rownames(installed.packages()) == FALSE) {
+#if("tm" %in% rownames(installed.packages()) == FALSE) {
 
   update.packages(checkBuilt=TRUE, ask=FALSE,repos = "http://cran.us.r-project.org", dependencies = TRUE)
   install.packages("tm",repos = "http://cran.us.r-project.org", dependencies = TRUE)
@@ -8,7 +8,7 @@ if("tm" %in% rownames(installed.packages()) == FALSE) {
   install.packages("doParallel",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
   install.packages("txtplot",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
 
-}
+#}
 if("compiler" %in% rownames(installed.packages()) == FALSE) {
   install.packages("compiler",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
 
@@ -149,7 +149,7 @@ for(j in 1:nfr) {
   smsTrainB = apply(smsFreqTrain, MARGIN = 2, convertCounts)
   smsTestB  = apply(smsFreqTest, MARGIN = 2, convertCounts)
   # fit NM on train
-  smsNB = naiveBayes(smsTrainB, smsTrainy)
+  smsNB = naiveBayes(data.frame(smsTrainB), smsTrainy)
   # predict on test
   yhat = predict(smsNB,smsTestB)
   # store oos missclass
