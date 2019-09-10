@@ -93,9 +93,11 @@ if (!file.exists(destfile)) {
 
 }
 usedcars = read.csv("usedcars.csv")
+library("compiler")
+
 library(doParallel)
 
-#sessionInfo() #see what packages were loaded
+sessionInfo() #see what packages were loaded
 registerDoParallel(cores=8)
 cat("number of workers is: ",getDoParWorkers(),"\n")
 
@@ -111,9 +113,16 @@ cmpfun(points)
 
 price = usedcars['price']
 mileage = usedcars['mileage']
+# y = price[,1] These where values that worked in the past.
+# x = mileage[,1]
 
 price = price[,1]
 mileage = mileage[,1]
+
+#temp <- mileage
+#mileage <- price
+#%price <- temp
+plot(mileage,price,col='blue')
 
 docvknn = function(x,y,k,nfold=10,doran=TRUE,verbose=TRUE) {
   return(docv(x,y,matrix(k,ncol=1),doknn,mse,nfold=nfold,doran=doran,verbose=verbose))
@@ -123,9 +132,8 @@ cmpfun(docvknn)
 #browser()
 
 #price <- rev(price)
-png('simple_plot_3.png',type="cairo")
-plot(mileage,price,col='blue')
-dev.off()
+#png('simple_plot_3.png',type="cairo")
+#dev.off()
 nsim=30
 fit1 = rep(0,nsim)
 train = data.frame(mileage,price)
@@ -148,7 +156,7 @@ price <- y
 mileage <- x
 kfit1 = kknn(mileage~price,train,test,k=450,kernel = "rectangular")
 #fit1 = kfit1$fitted[fitind]
-png('compare_fits.png',type="cairo")
+#png('compare_fits.png',type="cairo")
 par()
 plot(mileage,price,col="lightgray")
 points(mileage,price,col="blue",pch=16)
@@ -164,14 +172,14 @@ contents = docvknn(data.frame(mileage),price,150,nfold=5,doran=TRUE,verbose=TRUE
 
 #plot(mileage,price,col="lightgray")
 abline(relation,col="green",pch=17,cex=2)
-dev.off()
+#dev.off()
 set.seed(99)
 compare <- TRUE
 if (compare==TRUE){
   kfito = kknn(mileage~price,train,test,k=80,kernel = "optimal")
   #fito = kfito$fitted[fitind]
 
-  png('compare_fits.png',type="cairo")
+  #png('compare_fits.png',type="cairo")
   par()
   plot(mileage,price,col="lightgray")
 
@@ -180,7 +188,7 @@ if (compare==TRUE){
   lines(test$price,kfitr$fitted,col="red",lwd=2)
   lines(test$price,kfito$fitted,col="red",lwd=2)
   abline(relation,col="green",pch=17,cex=2)
-  dev.off()
+  #dev.off()
 }
 
 
@@ -201,8 +209,9 @@ if (compare==TRUE){
 # At k = 300 everything looks good.
 ##
 #for (k in kvec){
+#resP = foreach(k in kvev) %dopar% {
 
-browser()
+#browser()
 
 matrix<-foreach(i=1:length(kvec),.combine=cbind) %do% {
 #matrix<-foreach(i=1:.combine=cbind) %do% {
@@ -210,7 +219,7 @@ matrix<-foreach(i=1:length(kvec),.combine=cbind) %do% {
    thing_to_print <-paste('iteration number: ', kvec[i])
    print(thing_to_print)
    fname = paste('k_number_kmeans',kvec[i],'.png')
-   png(fname,type="cairo")
+   #png(fname,type="cairo")
    par()
    kfit1 = kknn(price~mileage,train,test,k=k,kernel = "rectangular")
    fit1[i] = kfit1$fitted[fitind]
@@ -222,13 +231,13 @@ matrix<-foreach(i=1:length(kvec),.combine=cbind) %do% {
    relation <- lm(price~mileage)
    plot(mileage,price,col="lightgray")
    abline(relation,col="green",pch=17,cex=2)
-   dev.off()
+   #dev.off()
 
    fname = paste('the_box_plots',k,'.png')
-   png(fname,type="cairo")
+   #png(fname,type="cairo")
    boxplot(fit1[i])
    abline(h = kfit1$fitted,col="red")
-   dev.off()
+   #dev.off()
  }
 
 # the data makes sense when only cost can be zero. Mileage can't be zero.
