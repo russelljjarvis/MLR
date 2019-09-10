@@ -1,5 +1,4 @@
 # Assignment 3
-Rstudio seemed intolreably slow.
 
 ```R
 library("compiler")
@@ -14,7 +13,7 @@ doknn = function(x,y,xp,k) {
    return(near$fitted)
 }
 ```
-I had to escape R studio, and learn how to compile functions, which took some time.
+Rstudio seemed intolreably slow. I had to escape R studio, and learn how to compile functions, which took some time.
 
 
 Does the plot of the prices make sense?
@@ -23,6 +22,7 @@ In order to answer that question I plotted the data.
 mileage = usedcars['mileage']
 price = usedcars['price']
 ```
+price as a function of mileage
 ![price as a function of mileage](/home/russell/git/MLR/production/mileage_versus_price.png)
 There is a discontinuity in the data, which can best be explained by missing values, that were not imputed, perhaps these belonged to a particular year.
 
@@ -43,15 +43,18 @@ A second hard car that was driven for only 8 miles is plausible.
  Min.   :     8
  Max.   :488525
 
+Here is a plot of just the correlation. It's a terrible fit.
 ![Here is a plot of just the correlation. It's a terrible fit.](/production/just_correlation.png)
 
-
+This plot is an example of using  kmeans regression. k means using 45 neighbours.
 ![This plot is an example of using  kmeans regression. k means using 45 neighbours.](/production/kmeans45.png)
 
 Using K 450 makes a really smooth fit, but perhaps we have overfitted, with an overly complex and not generalizable model
 
+This plot is an example of using kmeans regression. k means using 45 neighbours.
 ![This plot is an example of using kmeans regression. k means using 45 neighbours.](/production/with_correct_fit_index.png)
 
+This plot is an example of using  kmeans optimal/ versus rectangular methods, where green is optimal and red is rectangular, the optimal method looks smoother, both methods where computed using k =45.
 ![This plot is an example of using  kmeans regression using k =45.](/production/optimal_versus_rectangular.png)
 ```R
 Browse[1]> print(paste('the price at 10000 from kmeans is: ',kfit1$fitted[10000]))
@@ -65,12 +68,15 @@ linear$fitted.values[10000])
 
 ```
 
-I used all of the provided cross validation methods, that used Least Square Error function.
+I used all of the provided cross validation methods, that used Least Square Error function, in scripts provided, this funtion, and functions nested in it, perform, the k-nearest neighbours algorithm, over `k` neighbours (adjusted between the range of `1-145` provided as a function argument, and it finds the least square error, associated with the fit. In this case adding more and more neighbours into the fit, smoothed out the prediction, adding more neighbours reduced model complexity (in this case variability). I didn't find a limit to how much increasing K improved out of sample predictions, but I did observe diminishing returns, when K started approaching the half the total number of samples (N/2)
+ 
+
 ```R
 matrix<-foreach(k=1:145 ,.combine=cbind) %dopar% {       do_cv_knn(data.frame(mileage),price,k,nfold=5,doran=TRUE,verbose=TRUE)
 }
 plot_against = rep(1:length(matrix))
 plot(plot_against,matrix)
+This plot is an example of using  kmeans regression using k =45:
 ```
 
 ![This plot is an example of using  kmeans regression using k =45.](/production/plot_of_cross_validation.png)
@@ -104,7 +110,7 @@ reduced_prices = price[year_indexs]
 reduced_mileage = mileage[year_indexs]
 plot(reduced_mileage,reduced_prices,col='blue')
 ```
-
+This plot is of price versus mileage on the 2008 model cars only.
 ![This plot is of price versus mileage on the 2008 model cars only.](/production/2008_only.png)
 
 cmpfun(docvknn)
