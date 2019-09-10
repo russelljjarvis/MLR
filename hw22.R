@@ -7,14 +7,27 @@
 # if the file is in your directory:
 #smsRaw = read.csv("sms_spam.csv", stringsAsFactors = FALSE)
 # or read it off the web:
+#setContentType("image/png")
 smsRaw = read.csv("http://www.rob-mcculloch.org/data/sms_spam.csv", stringsAsFactors = FALSE)
 print(smsRaw)
+library("compiler")
 
 ## examine the structure of the sms data
 is.data.frame(smsRaw)
 dim(smsRaw)
 names(smsRaw)
 str(smsRaw) #has type: ham or spam, text: the text message, goal is to guess type from text
+if("wordcloud" %in% rownames(installed.packages()) == FALSE) {
+
+  install.packages("wordcloud",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
+}
+
+if("pryr" %in% rownames(installed.packages()) == FALSE) {
+
+  install.packages("pryr",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
+}
+#library(wordcloud)
+#cmpfun(wordcloud)
 
 ########################################
 ## convert spam/ham to factor.
@@ -23,8 +36,8 @@ print(table(smsRaw$type))
 
 ########################################
 # word cloud visualization
-library(wordcloud)
-wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
+#library(wordcloud)
+#wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
 
 ########################################
 ## build a corpus using the text mining (tm) package
@@ -190,9 +203,9 @@ prop.table(table(smsTesty))
 ########################################
 # word cloud visualization
 #can call wordcloud using the corpus
-wordcloud(smsCC, min.freq = 50, random.order = FALSE)
+#wordcloud(smsCC, min.freq = 50, random.order = FALSE)
 #can call wordcloud using the raw text
-wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
+##wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
 
 
 # subset the training data into spam and ham groups
@@ -200,15 +213,15 @@ spamSS  = subset(smsRaw, type == "spam")
 hamSS  = subset(smsRaw, type == "ham")
 
 par(mfrow=c(1,2))
-wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5))
-wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5))
+#wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5))
+#wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5))
 
 #with some color
 par(mfrow=c(1,2))
 pal = brewer.pal(6,"Dark2")
 pal = pal[-(1)]
-wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
-wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
+#wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
+#wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
 
 ########################################
 # save frequently-appearing terms to a character vector and then drop infrequent terms (cols of DTM)
