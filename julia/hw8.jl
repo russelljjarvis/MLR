@@ -9,20 +9,18 @@ vs = Vector{String}()
 push!(vs,"CSV")
 push!(vs,"DataFrames")
 push!(vs,"ScikitLearn")
+push!(vs,"JuliaML")
+push!(vs,"DecisionTree")
+
 for element in vs
    check_install(element)
    # using element
 end
 # check_install("DecisionTree")
 using DecisionTree
-if ! in("DataFrames",keys(Pkg.installed()))
-   Pkg.add("DataFrames")
-end
-if ! in("CSV",keys(Pkg.installed()))
-   Pkg.add("CSV")
-end
 using CSV
 using DataFrames
+using JuliaML
 if ! isfile("kaggle-del-train.csv")
    run(`wget http://www.rob-mcculloch.org/data/kaggle-del-train.csv`)
 end
@@ -49,7 +47,13 @@ print_tree(model, 5)
 println(get_classes(model)) # returns the ordering of the columns in predict_proba's output
 # run n-fold cross validation over 3 CV folds
 # See ScikitLearn.jl for installation instructions
-using ScikitLearn.CrossValidation: cross_val_score
+#using ScikitLearn.CrossValidation: cross_val_score
+
+#using ScikitLearn.ScikitLearn.preprocessing: StandardScaler
+data = [[0, 0], [0, 0], [1, 1], [1, 1]]
+scaler = StandardScaler()
+print(scaler.fit(data))
+StandardScaler(copy=True, with_mean=True, with_std=True)
 # accuracy = cross_val_score(model, features, labels, cv=3)
 
 
@@ -61,4 +65,3 @@ using ScikitLearn.CrossValidation: cross_val_score
 # big.tree =rpart(DelIn2Yr~.,data=ktr, control=rpart.control(cp=.0001))
 # nbig =length(unique(big.tree$where))cat("size of big tree: ",nbig,"\n")## size of big tree:  376
 # head(big.tree$where)
-Pkg.add("RData")

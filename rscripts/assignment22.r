@@ -5,29 +5,15 @@
 ########################################
 ## read in data
 # if the file is in your directory:
-#smsRaw = read.csv("sms_spam.csv", stringsAsFactors = FALSE)
+smsRaw = read.csv("sms_spam.csv", stringsAsFactors = FALSE)
 # or read it off the web:
-#setContentType("image/png")
 smsRaw = read.csv("http://www.rob-mcculloch.org/data/sms_spam.csv", stringsAsFactors = FALSE)
-print(smsRaw)
-library("compiler")
 
 ## examine the structure of the sms data
 is.data.frame(smsRaw)
 dim(smsRaw)
 names(smsRaw)
 str(smsRaw) #has type: ham or spam, text: the text message, goal is to guess type from text
-if("wordcloud" %in% rownames(installed.packages()) == FALSE) {
-
-  install.packages("wordcloud",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
-}
-
-if("pryr" %in% rownames(installed.packages()) == FALSE) {
-
-  install.packages("pryr",repos = "http://cran.us.r-project.org", INSTALL_opts = "--no-clean-on-error")
-}
-#library(wordcloud)
-#cmpfun(wordcloud)
 
 ########################################
 ## convert spam/ham to factor.
@@ -36,8 +22,8 @@ print(table(smsRaw$type))
 
 ########################################
 # word cloud visualization
-#library(wordcloud)
-#wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
+library(wordcloud)
+wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
 
 ########################################
 ## build a corpus using the text mining (tm) package
@@ -46,7 +32,7 @@ library(tm)
 smsC = VCorpus(VectorSource(smsRaw$text))
 print(smsC)
 #smsC is a list of lists where smsC[[i]] is a doc
-# and doc[[1]] is content, [[2]] is ``meta''
+# and doc[[1]] is content, [[2]] is ``meta'' 
 is.list(smsC)
 is.list(smsC[[1]])
 names(smsC[[1]])
@@ -84,16 +70,16 @@ as.character(smsCC[[1]])
 
 # tm package has a set of transformations
 #> getTransformations()
-#[1] "removeNumbers"     "removePunctuation" "removeWords"
+#[1] "removeNumbers"     "removePunctuation" "removeWords"      
 #[4] "stemDocument"      "stripWhitespace"
 
 # stopwords are common words that you want to delete because they
 #   have no information
 stopwords()[1:10]
-# [1] "i"         "me"        "my"        "myself"    "we"        "our"
+# [1] "i"         "me"        "my"        "myself"    "we"        "our"      
 # [7] "ours"      "ourselves" "you"       "your"
 
-# a bunch more cleanup
+# a bunch more cleanup 
 # note that for the functions from tm, you don't have to wrap the function with
 #       content_transformer
 smsCC = tm_map(smsCC, removeNumbers) # remove numbers
@@ -184,7 +170,7 @@ jj=smsDtm$j[1]
 smsDtm$v[1]
 terms[jj]
 for(i in 1:5) print(terms[smsDtm$j[i]])
-smsCC[[1]][1] #or smsCC[[1]]$content
+smsCC[[1]][1] #or smsCC[[1]]$content 
 
 ########################################
 #train and test
@@ -203,9 +189,9 @@ prop.table(table(smsTesty))
 ########################################
 # word cloud visualization
 #can call wordcloud using the corpus
-#wordcloud(smsCC, min.freq = 50, random.order = FALSE)
+wordcloud(smsCC, min.freq = 50, random.order = FALSE)
 #can call wordcloud using the raw text
-##wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
+wordcloud(smsRaw$text,max.words = 40, scale = c(3, 0.5))
 
 
 # subset the training data into spam and ham groups
@@ -213,15 +199,15 @@ spamSS  = subset(smsRaw, type == "spam")
 hamSS  = subset(smsRaw, type == "ham")
 
 par(mfrow=c(1,2))
-#wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5))
-#wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5))
+wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5))
+wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5))
 
 #with some color
 par(mfrow=c(1,2))
-#pal = brewer.pal(6,"Dark2")
+pal = brewer.pal(6,"Dark2")
 pal = pal[-(1)]
-#wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
-#wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
+wordcloud(spamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
+wordcloud(hamSS$text, max.words = 40, scale = c(3, 0.5),colors=pal)
 
 ########################################
 # save frequently-appearing terms to a character vector and then drop infrequent terms (cols of DTM)
@@ -322,3 +308,4 @@ CrossTable(smsTrain[!iiy1,"age"],smsTrain[!iiy1,"adult"],
 
 #11
 #1
+

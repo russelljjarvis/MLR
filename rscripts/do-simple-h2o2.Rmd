@@ -1,0 +1,231 @@
+<html class="gr__"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"></head><body data-gr-c-s-loaded="true">######################################################################
+######################################################################
+### functions to plot fit of y|x=(x1,x2) y in {FALSE,TRUE}, phat in (0,1)
+##  phat = prob(y=TRUE | x)
+plfit1 = function(x,y,pcex=1.5) {
+   plot(x[,1],x[,2],type="n")
+   points(x[y,1],x[y,2],col="blue",pch=16,cex=pcex)
+   points(x[!y,1],x[!y,2],col="red",pch=16,cex=pcex)
+}
+plfit2 = function(x,phat,y,yval=TRUE,pcex=2.5) {
+   gnn = (phat&lt;.5) &amp; (y!=yval)
+   gny = (phat&lt;.5) &amp; (y==yval)
+   gyn = (phat&gt;=.5) &amp; (y!=yval)
+   gyy = (phat&gt;=.5) &amp; (y==yval)
+   plot(x[,1],x[,2],type="n")
+   points(x[gnn,1],x[gnn,2],col="blue",pch=16,cex=pcex)
+   points(x[gny,1],x[gny,2],col="red",pch=17,cex=pcex)
+   points(x[gyn,1],x[gyn,2],col="red",pch=16,cex=pcex)
+   points(x[gyy,1],x[gyy,2],col="blue",pch=17,cex=pcex)
+}
+##################################################
+### start up h2o
+library(h2o)
+h2oServer = h2o.init()
+
+##################################################
+### Let's use the Boston data but use y -&gt; y&gt;median(y) so it is classification
+library(MASS)
+attach(Boston)
+y = Boston$medv
+
+## let's make y binary
+y = as.factor(y&gt;median(y))
+
+x  = cbind(Boston$dis,Boston$lstat)
+p = ncol(x)
+for(i in 1:p) {
+   rgx = range(x)
+   x[,i] = (x[,i]-rgx[1])/(rgx[2]-rgx[1])
+}
+colnames(x) = c("dis","lstat")
+
+dfd = data.frame(y,x)
+
+## train and test
+set.seed(99)
+n=nrow(dfd)
+ii = sample(1:n,floor(.75*n))
+dftr = dfd[ii,]; ytr = y[ii] #train
+dfte = dfd[-ii,] ; yte = y[-ii] #test
+
+##################################################
+### linear=logit
+glmf = glm(y~.,data=dftr,family=binomial)
+yhltr = predict(glmf,type="response")
+yhlte = predict(glmf,dfte,type="response")
+
+##in-sample confusion matrix
+table(dftr$y,yhltr&gt;.5)
+##out-of-sample confusion matrix
+table(dfte$y,yhlte&gt;.5)
+
+
+par(mfrow=c(1,3))
+plfit1(dftr[,2:3],dftr$y==TRUE)
+title(main="color indicates y",cex.main=1.5)
+plfit1(dftr[,2:3],yhltr&gt;.5)
+title(main="color indicates phat&gt;.5",cex.main=1.5)
+plfit2(dftr[,2:3],yhltr&gt;.5,dftr$y==TRUE)
+title(main="symbol indicates y, blue if phat&gt;.5 is correct, red else",cex.main=1.5)
+
+
+######################################################################
+### data in h2o form
+## this puts dftrain and dftest "on the server"
+## the idea is that all the action takes place on the server and you
+## push and pull information to and from the server
+## In simple use, "the server" is just your machine.
+dftrain = as.h2o(dftr, destination_frame = "bost.train")
+dftest = as.h2o(dfte, destination_frame = "bost.test")
+
+#look at h2o data objects
+print(dftrain) #h2o prints out first 6 rows
+print(dftest)
+
+# see that bost.test and bost.train are now on server
+print(h2o.ls()) 
+
+#inspect dftrain
+cat("str of dftrain:\n")
+print(str(dftrain))
+
+cat("is dh2o an S4 class?:\n")
+print(isS4(dftrain))
+cat("no, it is an S3 class:\n")
+print(class(dftrain))
+
+cat("attributes of dftrain:\n")
+print(attributes(dftrain))
+
+cat("the h2o id of dftrain is (see h2o.ls()): ",attr(dftrain,"id"),"\n")
+
+
+######################################################################
+#  2 hidden layer 10 neurons
+
+nnf = h2o.deeplearning(x=2:3, y=1,
+                         training_frame = dftrain,
+                         hidden = c(10,10),
+                         activation = "Tanh",
+                         epochs = 200,
+                         model_id = "boston.nn_10-10"
+                         )
+
+#nnf is an S4 class:
+cat("is model object nnf S4?:\n")
+print(isS4(nnf))
+
+#It is S4, to pull of a slot use @
+cat("h2o model_id of nnf is",nnf@model_id,"\n")
+#check this using h2o.ls
+print(h2o.ls())
+
+## to see the whole thing which is a lot:
+print(str(nnf))
+
+
+######################################################################
+### look at confusion matrix
+print(h2o.confusionMatrix(nnf,thresholds=.5))
+print(h2o.performance(nnf))
+
+######################################################################
+## phat on test, this will be a matrix with three columns
+## I'll pull off the 3rd column wich will be p(y=true | x)
+yhntr = as.matrix(h2o.predict(nnf, dftrain)[,3])[,1]
+yhnte = as.matrix(h2o.predict(nnf, dftest)[,3])[,1]
+
+par(mfrow=c(1,2))
+plot(yhltr,yhntr); abline(0,1,col="red")
+plot(yhlte,yhnte); abline(0,1,col="red")
+
+##in conf
+table(dftr$y,yhntr&gt;.5)
+table(dftr$y,yhltr&gt;.5)
+##out conf
+table(dfte$y,yhnte&gt;.5)
+table(dfte$y,yhlte&gt;.5)
+
+par(mfrow=c(3,2))
+plfit1(dftr[,2:3],dftr$y==TRUE)
+title(main="train: x=(x1,x2) and y",cex.main=1.5)
+
+plfit1(dftr[,2:3],yhltr&gt;.5)
+title(main="train: x=(x1,x2)  and logit yhat&gt;.5",cex.main=1.5)
+
+plfit2(dftr[,2:3],yhltr&gt;.5,dftr$y==TRUE)
+title(main="train: x=(x1,x2) and logit yhat&gt;.5 and y")
+
+plfit2(dftr[,2:3],yhntr&gt;.5,dftr$y==TRUE)
+title(main="train: x=(x1,x2) and nnet yhat&gt;.5 and y")
+
+plfit1(dfte[,2:3],yhlte&gt;.5)
+title(main="test: x=(x1,x2)  and logit yhat&gt;.5",cex.main=1.5)
+plfit1(dfte[,2:3],yhnte&gt;.5)
+title(main="test: x=(x1,x2)  and nnet yhat&gt;.5",cex.main=1.5)
+
+## if you like it, save it
+#h2o.saveModel(nnf, path=getwd(),force=TRUE)
+
+fp = file.path(getwd(), "boston.nn_10-10")
+if(file.exists(fp)) {
+  nnfl = h2o.loadModel(fp)
+}
+
+##################################################
+### grid search
+
+################
+## define grid
+#network structure
+hidden_opt = list(c(10,10),c(100,100))
+
+#l1 regularization
+l1_opt = c(.01,.005,.001,.0005,.0001)
+
+hyper_params = list(hidden = hidden_opt,
+                     l1 = l1_opt
+                     )
+
+xi = 2:3
+yi=1
+gDNN = h2o.grid("deeplearning",
+                    hyper_params=hyper_params,
+                    x=xi,y=yi,training_frame=dftrain,validation_frame=dftest,
+                         activation = "Tanh",
+                    epochs=200)
+
+cat("model ids from grid search:\n")
+print(gDNN@model_ids)
+listModels = lapply(gDNN@model_ids, function(id) h2o.getModel(id))
+
+numModels=length(listModels)
+mratednn = rep(0,numModels)
+for(i in 1:numModels) {
+   print(h2o.confusionMatrix(listModels[[i]],valid=TRUE))
+   mratednn[i] = h2o.performance(listModels[[i]],valid=TRUE)@metrics$mean_per_class_error
+}
+
+par(mfrow=c(1,1))
+plot(mratednn,col="blue",pch=16)
+
+
+ph1 = as.matrix(h2o.predict(listModels[[1]], dftest)[,3])[,1]
+ph4 = as.matrix(h2o.predict(listModels[[4]], dftest)[,3])[,1]
+ph6 = as.matrix(h2o.predict(listModels[[6]], dftest)[,3])[,1]
+plot(ph1,ph4)
+abline(0,1,col="red",lwd=3)
+pairs(cbind(ph1,ph4,ph6))
+
+
+par(mfrow=c(1,2))
+plfit2(dfte[,2:3],ph1&gt;.5,dfte$y==TRUE)
+plfit2(dfte[,2:3],ph6&gt;.5,dfte$y==TRUE)
+
+
+
+
+
+</body></html>
