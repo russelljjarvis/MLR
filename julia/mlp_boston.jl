@@ -88,8 +88,10 @@ end
 
 p3 = scatter(errdf[:,:Epoch], errdf[:,:Error], xlabel="Epoch", ylabel="Error")
 p4 = scatter(predict(ω, x)', y', reg=true, xlabel="Predicted", ylabel="Observed")
-plot(p3, p4, layout=(1,2), size=(950,500))
-plot(p2, p4, layout=(1,2), size=(950,500))
+plot(p3, p4)# layout=(1,2), size=(950,500))
+png(p3, p4)# layout=(1,2), size=(950,500))
+plot(p2, p4)# layout=(1,2), size=(950,500))#,png)
+png(p2, p4)# layout=(1,2), size=(950,500))
 
 
 xtrn, xtst = x[:, 1:400], x[:, 401:end]
@@ -107,6 +109,7 @@ let
             errdf[cntr, :Epoch]=i
             errdf[cntr, :TrnError]=loss(ω,xtrn,ytrn)
             errdf[cntr, :ValError]=loss(ω,xtst,ytst)
+	    print(cntr,errdf,TrnError)
             cntr+=1
         end
     end
@@ -116,11 +119,12 @@ end
 @df errdf[5:60,:] plot(:Epoch, [:ValError, :TrnError], xlabel="Epoch", ylabel="Error",
                        label=["Validation" "Training"], lw=3)
 gui()
-#using PyPlot
-# use x = linspace(0,2*pi,1000) in Julia 0.6
-#x = range(0; stop=2*pi, length=1000); y = sin.(3 * x + 4 * cos.(2 * x));
-#plot(x, y, color="red", linewidth=2.0, linestyle="--")
-#title("A sinusoidally modulated sinusoid")
+using PyPlot
+#use
+x = linspace(0,2*pi,1000) in Julia 0.6
+x = range(0; stop=2*pi, length=1000); y = sin.(3 * x + 4 * cos.(2 * x));
+plot(x, y, color="red", linewidth=2.0, linestyle="--")
+title("A sinusoidally modulated sinusoid")
 #After doing
 
 #predict
