@@ -15,7 +15,7 @@ if("kknn" %in% rownames(installed.packages()) == FALSE) {
 # Clear plots
 if(!is.null(dev.list())) dev.off()
 # Clear console
-cat("\014")
+#cat("\014")
 # Clean workspace
 rm(list=ls())
 # Set working directory
@@ -25,7 +25,7 @@ destfile = "usedcars.csv"
 if (!file.exists(destfile)) {
   usedcars = read.csv("http://www.rob-mcculloch.org/data/usedcars.csv")
   write.csv(usedcars, file = destfile)
-  
+
 }
 usedcars = read.csv("usedcars.csv")
 
@@ -67,32 +67,32 @@ for(i in 1:nsim) {
   kfit1 = kknn(x~y,train[ii,],test,k=kvec[1],kernel = "rectangular")
   kfit2 = kknn(x~y,train[ii,],test,k=kvec[2],kernel = "rectangular")
   kfit3 = kknn(x~y,train[ii,],test,k=kvec[3],kernel = "rectangular")
-  
+
   plot(x,y,col="lightgray")
   points(x[ii],y[ii],col="blue",pch=16)
   lines(test$x,kfit1$fitted,col="red",lwd=2)
   points(test[fitind,1],kfit1$fitted[fitind],col="green",pch=17,cex=2)
-  
+
   plot(x,y,col="lightgray")
   lines(test$x,kfit2$fitted,col="red",lwd=2)
   points(test[fitind,1],kfit2$fitted[fitind],col="green",pch=17,cex=2)
-  
+
   plot(x,y,col="lightgray")
   lines(test$x,kfit3$fitted,col="red",lwd=2)
   points(test[fitind,1],kfit3$fitted[fitind],col="green",pch=17,cex=2)
-  
+
   fit1[i]=kfit1$fitted[fitind]
   boxplot(fit1[1:i],ylim=ylm)
   abline(h=gknn$fitted,col="red")
-  
+
   fit2[i]=kfit2$fitted[fitind]
   boxplot(fit2[1:i],ylim=ylm)
   abline(h=gknn$fitted,col="red")
-  
+
   fit3[i]=kfit3$fitted[fitind]
   boxplot(fit3[1:i],ylim=ylm)
   abline(h=gknn$fitted,col="red")
-  
+
   #readline("go?")
   Sys.sleep(.4)
 }
@@ -109,4 +109,3 @@ cat('People will pay more for reduced mileage, as this relates to less mechanica
 #  Add the fit from a linear regression to the plot. Add the fit from kNN for various values of k to the plot. For what value of k does the plot look nice?
 #  Using your “nice” value of k, what is the predicted price of a car with 100,000 miles on it?
 #  What is the prediction from a linear fit?
-

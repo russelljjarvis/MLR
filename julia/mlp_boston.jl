@@ -88,6 +88,9 @@ end
 
 p3 = scatter(errdf[:,:Epoch], errdf[:,:Error], xlabel="Epoch", ylabel="Error")
 p4 = scatter(predict(ω, x)', y', reg=true, xlabel="Predicted", ylabel="Observed")
+# p3, and p4 are like plot objects,
+# That are sent to a plotting backend with subplot c
+# configurations
 plot(p3, p4, layout=(1,2), size=(950,500))
 plot(p2, p4, layout=(1,2), size=(950,500))
 
@@ -107,6 +110,7 @@ let
             errdf[cntr, :Epoch]=i
             errdf[cntr, :TrnError]=loss(ω,xtrn,ytrn)
             errdf[cntr, :ValError]=loss(ω,xtst,ytst)
+	    print(cntr)#,errdf,TrnError)
             cntr+=1
         end
     end
@@ -115,7 +119,7 @@ end
 #using StatPlots
 @df errdf[5:60,:] plot(:Epoch, [:ValError, :TrnError], xlabel="Epoch", ylabel="Error",
                        label=["Validation" "Training"], lw=3)
-#gui()
+gui()
 #using PyPlot
 # use x = linspace(0,2*pi,1000) in Julia 0.6
 #x = range(0; stop=2*pi, length=1000); y = sin.(3 * x + 4 * cos.(2 * x));
