@@ -33,7 +33,7 @@ function train(ω, data; lr=0.01)
     return ω
 end;
 
-gr();
+#gr();
 scatter(x', y[1,:], layout=(3,5), reg=true, size=(950,500))
 
 ω = Any[ 0.1*randn(1,13), 0.0 ];
@@ -115,7 +115,7 @@ end
 #using StatPlots
 @df errdf[5:60,:] plot(:Epoch, [:ValError, :TrnError], xlabel="Epoch", ylabel="Error",
                        label=["Validation" "Training"], lw=3)
-gui()
+#gui()
 #using PyPlot
 # use x = linspace(0,2*pi,1000) in Julia 0.6
 #x = range(0; stop=2*pi, length=1000); y = sin.(3 * x + 4 * cos.(2 * x));
