@@ -18,6 +18,17 @@ isfile("housing.data") ||
 
 rawdata = readdlm("housing.data")'
 
+
+using CSV, DataFrames
+file = "BostonHousing.csv"
+
+df = DataFrame(CSV.File(file)) #|> DataFrame!
+#df[:medv]
+#
+lstat = df[:lstat]
+medv = df[:medv]
+
+print(names(df))
 # The last feature is our target -- the price of the house.
 split_ratio = 0.5 # For the train test split
 
